@@ -1,0 +1,20 @@
+from model.model import default_model
+from prompt.prompt import loop_agnet,file_assistant_prompt,Project_Manager_prompt,Project_Analyst_prompt,System_Architect_prompt,Database_Design_prompt,Task_Extraction_prompt,Coder_prompt,File_Saver_prompt,Loop_coder_prompt,dir_creater_prompt,code_review_prompt,Intelligent_Assistant_prompt
+from tools.tools import project_tools,Task_Extraction_tools,Project_Analyst_tools,System_Architect_tools,Project_Manager_tools,Database_Design_tools,coder_tools,dir_create_tools,code_review_tools,Intelligent_tools
+from langgraph.prebuilt import create_react_agent
+
+current_model=default_model
+
+Project_Analyst= create_react_agent(model=current_model,tools=project_tools,prompt=Project_Analyst_prompt,name="Project_Analyst")
+Project_Manager=create_react_agent(model=current_model,tools=project_tools,prompt=Project_Manager_prompt,name="Project_Manager")
+System_Architect=create_react_agent(model=current_model,tools=project_tools,prompt=System_Architect_prompt,name="System_Architect")
+Database_Design=create_react_agent(model=current_model,tools=project_tools,prompt=Database_Design_prompt,name="Database_Design")
+Task_Extraction=create_react_agent(model=current_model,tools=Task_Extraction_tools,prompt=Task_Extraction_prompt,name="Task_Extraction")
+Coder=create_react_agent(model=current_model,tools=coder_tools,prompt=Loop_coder_prompt,name="Coder")
+File_Saver_0=create_react_agent(model=current_model,tools=Project_Analyst_tools,prompt=File_Saver_prompt,name="File_Saver")
+File_Saver_1=create_react_agent(model=current_model,tools=Project_Manager_tools,prompt=File_Saver_prompt,name="File_Saver")
+File_Saver_2=create_react_agent(model=current_model,tools=System_Architect_tools,prompt=File_Saver_prompt,name="File_Saver")
+File_Saver_3=create_react_agent(model=current_model,tools=Database_Design_tools,prompt=File_Saver_prompt,name="File_Saver")
+folder=create_react_agent(model=current_model,tools=dir_create_tools,prompt=dir_creater_prompt,name="dir_creater")
+Code_Reviewer=create_react_agent(model=current_model,tools=code_review_tools,prompt=code_review_prompt,name="Coder_Reviewer")
+Intelligent_Assistant=create_react_agent(model=current_model,tools=Intelligent_tools,prompt=Intelligent_Assistant_prompt,name="Intelligent_Assistant")

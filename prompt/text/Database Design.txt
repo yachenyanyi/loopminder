@@ -1,0 +1,363 @@
+
+---
+
+# **数据库设计提示词模板**
+
+## **角色设定**
+你是一位资深数据库架构师，擅长根据系统需求设计高性能、可扩展的数据库方案。请根据用户提供的系统架构和功能需求，输出完整的数据库设计方案。
+
+
+## **输入要求**
+用户将提供：
+1. 系统架构概述
+2. 核心功能模块清单
+3. 预期数据量级（可选）
+4. 特殊需求（如高并发/安全性要求）
+
+## **输出规范**
+
+### **1. 数据库总览**
+```markdown
+- **数据库类型**: [关系型/NoSQL/混合型] + 选择理由
+- **版本要求**: [如MySQL 8.0+]
+- **字符编码**: [如UTF8MB4]
+- **事务隔离级别**: [如REPEATABLE READ]
+```
+
+### **2. 表结构设计**
+#### **2.1 标准表模板**
+```sql
+CREATE TABLE [表名] (
+    [字段名] [数据类型] [约束条件] COMMENT '字段说明',
+    ...
+    [索引定义]
+) ENGINE=[存储引擎] COMMENT '[表说明]';
+```
+
+#### **2.2 设计要点**
+- **主键策略**：自增ID/UUID/雪花算法
+- **字段规范**：
+  - 布尔类型：使用TINYINT(1)
+  - 时间类型：DATETIME/TIMESTAMP选择依据
+  - 文本类型：VARCHAR长度优化建议
+- **外键约束**：是否启用物理外键
+
+### **3. 关系模型**
+```mermaid
+erDiagram
+    USER ||--o{ ARTICLE : "1:n"
+    ARTICLE ||--o{ COMMENT : "1:n"
+    USER ||--o{ COMMENT : "1:n"
+    ARTICLE }|--|| TAG : "m:n"
+```
+
+### **4. 索引策略**
+| 表名 | 索引字段 | 索引类型 | 用途 |
+|------|---------|---------|------|
+| users | username | UNIQUE | 登录校验 |
+| articles | author_id+status | BTREE | 作者文章查询 |
+
+### **5. 性能优化**
+- **分表策略**：垂直/水平分表方案
+- **缓存方案**：热数据缓存设计
+- **SQL优化建议**：
+  ```sql
+  /* 反例 */
+  SELECT * FROM articles WHERE title LIKE '%关键词%';
+  
+  /* 正例 */
+  SELECT id,title FROM articles USE INDEX(idx_title) 
+  WHERE title LIKE '关键词%' LIMIT 100;
+  ```
+
+### **6. 安全设计**
+- **数据加密**：
+  - 密码字段：bcrypt+盐值
+  - 敏感信息：AES加密
+- **防注入措施**：预处理语句示例
+  ```java
+  // JDBC示例
+  PreparedStatement stmt = conn.prepareStatement(
+      "SELECT * FROM users WHERE username=?");
+  stmt.setString(1, inputUsername);
+  ```
+
+### **7. 初始化数据**
+```sql
+-- 管理员账户
+INSERT INTO users VALUES(
+    NULL,
+    'admin',
+    '$2a$10$xJwL5...', -- bcrypt加密密码
+    'admin@example.com',
+    '系统管理员',
+    NOW()
+);
+```
+
+### **8. 连接配置示例**
+```yaml
+# application.yml示例
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/blog_db?useSSL=false
+    username: blog_user
+    password: Str0ngP@ss
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 30000
+```
+
+## **生成规则**
+1. **范式平衡**：在3NF基础上适当反范式化
+2. **扩展性**：预留20%的备用字段
+3. **兼容性**：考虑多数据库方言（如分页语法差异）
+4. **审计要求**：重要表包含create_time/update_time
+
+## **示例输出**
+（插入用户提供的博客网数据库设计示例）
+
+## **开始生成**
+请提供以下信息：
+1. 系统架构描述：_________
+2. 核心功能清单：_________
+3. 特殊要求：_________
+
+---
+
+##输出示例
+# 博客网数据库设计
+
+## 数据库概述
+本博客系统使用MySQL关系型数据库，采用UTF-8编码，设计了多个表来存储博客的各类数据，包括用户信息、文章内容、评论、图片、视频和留言等。
+
+## 数据库表结构
+
+### 1. 用户表（users）
+存储用户信息，包括普通用户和管理员。
+
+```sql
+CREATE TABLE users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,  -- 存储加密后的密码
+    email VARCHAR(100) NOT NULL,
+    nickname VARCHAR(50),
+    avatar VARCHAR(200),  -- 用户头像路径
+    role ENUM('user', 'admin') DEFAULT 'user',  -- 用户角色
+    register_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_login_time DATETIME,
+    status TINYINT DEFAULT 1  -- 1:正常, 0:禁用
+);
+```
+
+### 2. 文章表（articles）
+存储博客文章内容。
+
+```sql
+CREATE TABLE articles (
+    article_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(200) NOT NULL,
+    content TEXT NOT NULL,
+    author_id INT NOT NULL,
+    publish_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    view_count INT DEFAULT 0,  -- 阅读量
+    comment_count INT DEFAULT 0,  -- 评论数
+    is_recommended TINYINT DEFAULT 0,  -- 是否推荐，1:推荐, 0:不推荐
+    status TINYINT DEFAULT 1,  -- 1:发布, 0:草稿, -1:删除
+    FOREIGN KEY (author_id) REFERENCES users(user_id)
+);
+```
+
+### 3. 文章评论表（article_comments）
+存储文章的评论信息。
+
+```sql
+CREATE TABLE article_comments (
+    comment_id INT PRIMARY KEY AUTO_INCREMENT,
+    article_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    comment_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status TINYINT DEFAULT 1,  -- 1:正常, 0:隐藏
+    FOREIGN KEY (article_id) REFERENCES articles(article_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+```
+
+### 4. 图片表（images）
+存储上传的图片信息。
+
+```sql
+CREATE TABLE images (
+    image_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(200),
+    description TEXT,
+    file_path VARCHAR(200) NOT NULL,  -- 图片文件路径
+    upload_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    user_id INT NOT NULL,  -- 上传者ID
+    status TINYINT DEFAULT 1,  -- 1:正常, 0:隐藏
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+```
+
+### 5. 视频表（videos）
+存储上传的视频信息。
+
+```sql
+CREATE TABLE videos (
+    video_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    file_path VARCHAR(200) NOT NULL,  -- 视频文件路径
+    thumbnail_path VARCHAR(200),  -- 视频缩略图路径
+    upload_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    user_id INT NOT NULL,  -- 上传者ID
+    view_count INT DEFAULT 0,  -- 观看次数
+    comment_count INT DEFAULT 0,  -- 评论数
+    status TINYINT DEFAULT 1,  -- 1:正常, 0:隐藏
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+```
+
+### 6. 视频评论表（video_comments）
+存储视频的评论信息。
+
+```sql
+CREATE TABLE video_comments (
+    comment_id INT PRIMARY KEY AUTO_INCREMENT,
+    video_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    comment_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status TINYINT DEFAULT 1,  -- 1:正常, 0:隐藏
+    FOREIGN KEY (video_id) REFERENCES videos(video_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+```
+
+### 7. 留言表（messages）
+存储访客留言信息。
+
+```sql
+CREATE TABLE messages (
+    message_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,  -- 可以为NULL，表示未登录用户
+    nickname VARCHAR(50),  -- 未登录用户的昵称
+    email VARCHAR(100),  -- 未登录用户的邮箱
+    content TEXT NOT NULL,
+    message_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reply_id INT,  -- 回复的留言ID，可以为NULL
+    status TINYINT DEFAULT 1,  -- 1:正常, 0:隐藏
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (reply_id) REFERENCES messages(message_id)
+);
+```
+
+### 8. 标签表（tags）
+存储文章标签。
+
+```sql
+CREATE TABLE tags (
+    tag_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+```
+
+### 9. 文章标签关联表（article_tags）
+存储文章和标签的多对多关系。
+
+```sql
+CREATE TABLE article_tags (
+    article_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    PRIMARY KEY (article_id, tag_id),
+    FOREIGN KEY (article_id) REFERENCES articles(article_id),
+    FOREIGN KEY (tag_id) REFERENCES tags(tag_id)
+);
+```
+
+### 10. 系统设置表（settings）
+存储博客系统的全局设置。
+
+```sql
+CREATE TABLE settings (
+    setting_id INT PRIMARY KEY AUTO_INCREMENT,
+    setting_key VARCHAR(50) NOT NULL UNIQUE,
+    setting_value TEXT,
+    description VARCHAR(200)
+);
+```
+
+## 数据库关系图
+
+主要实体关系：
+- 一个用户可以发表多篇文章（一对多）
+- 一个用户可以发表多条评论（一对多）
+- 一篇文章可以有多条评论（一对多）
+- 一个用户可以上传多张图片（一对多）
+- 一个用户可以上传多个视频（一对多）
+- 一个视频可以有多条评论（一对多）
+- 一篇文章可以有多个标签（多对多）
+
+## 索引设计
+
+为提高查询效率，建立以下索引：
+
+```sql
+-- 文章表索引
+CREATE INDEX idx_articles_author ON articles(author_id);
+CREATE INDEX idx_articles_recommend ON articles(is_recommended);
+CREATE INDEX idx_articles_status ON articles(status);
+
+-- 评论表索引
+CREATE INDEX idx_article_comments_article ON article_comments(article_id);
+CREATE INDEX idx_article_comments_user ON article_comments(user_id);
+
+-- 视频表索引
+CREATE INDEX idx_videos_user ON videos(user_id);
+CREATE INDEX idx_videos_status ON videos(status);
+
+-- 视频评论表索引
+CREATE INDEX idx_video_comments_video ON video_comments(video_id);
+CREATE INDEX idx_video_comments_user ON video_comments(user_id);
+
+-- 留言表索引
+CREATE INDEX idx_messages_user ON messages(user_id);
+CREATE INDEX idx_messages_reply ON messages(reply_id);
+```
+
+## 初始数据
+
+系统初始化时，需要插入管理员账户和一些基本设置：
+
+```sql
+-- 插入管理员账户（密码为加密后的值）
+INSERT INTO users (username, password, email, nickname, role) 
+VALUES ('admin', 'e10adc3949ba59abbe56e057f20f883e', 'admin@example.com', '管理员', 'admin');
+
+-- 插入系统设置
+INSERT INTO settings (setting_key, setting_value, description) 
+VALUES ('blog_name', '我的博客', '博客名称');
+
+INSERT INTO settings (setting_key, setting_value, description) 
+VALUES ('blog_description', '这是一个基于JSP的博客系统', '博客描述');
+
+INSERT INTO settings (setting_key, setting_value, description) 
+VALUES ('page_size', '10', '每页显示的文章数量');
+```
+
+## 数据库连接配置
+
+在项目中，将使用以下JDBC配置连接数据库：
+
+```java
+// 数据库连接参数
+String driver = "com.mysql.jdbc.Driver";
+String url = "jdbc:mysql://localhost:3306/blog_db?useUnicode=true&characterEncoding=utf8&useSSL=false";
+String username = "root";
+String password = "password";
+```
+
+数据库连接工具类将封装在`com.blog.util.DBUtil`中，提供获取连接和关闭连接的方法。
