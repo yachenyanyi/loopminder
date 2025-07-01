@@ -31,19 +31,22 @@
 
 ## ⚙️ 模型配置
 
-在 `model/model.py` 中添加您的模型：
+### 1. 配置文件位置
+模型配置文件位于：  
+`./model/model.py`
 
-```
-例如：
-os.environ["DEEPSEEK_API_KEY"]="<api_key>"
-<api_key>换成你的deepseek api密钥
-在"https://platform.deepseek.com"注册获得
-deepseek_model=ChatDeepSeek(model="deepseek-chat",#更换模型deepseek-response
-                            temperature=1.5)
-default_model=ollam_model#默认ollama
-切换至deepseek
-default_model=deepseek_model
-```
+
+### 2. 配置方法
+#### 添加 DeepSeek 模型
+```python
+# 设置API密钥环境变量
+os.environ["DEEPSEEK_API_KEY"] = "your_api_key_here"  # 替换为实际密钥
+
+# 初始化模型实例
+deepseek_model = ChatDeepSeek(
+    model="deepseek-chat",  # 可选：deepseek-response 等其他型号
+    temperature=1.5,        # 控制生成随机性（0-2）
+)
 
 
 
