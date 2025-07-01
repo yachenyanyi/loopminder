@@ -47,7 +47,8 @@ deepseek_model = ChatDeepSeek(
     temperature=1.5,        # 控制生成随机性（0-2）
 )
 
-
+### 3. 运行方法
+- python main.py
 
 ## ⚠️ 已知问题
 1. **项目构建模式**：
