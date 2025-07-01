@@ -67,7 +67,8 @@ deepseek_model = ChatDeepSeek(
 
 ## 🤝 参与贡献
 欢迎提交 Issue 或 PR：
-
+## 作者邮箱
+- 3425439082@qq.com
 
 ## 📜 开源协议
 [GNU GPL-3.0](LICENSE) © 2025 [yachenyanyi](https://github.com/yachenyanyi)
