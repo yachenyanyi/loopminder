@@ -69,7 +69,7 @@ deepseek_model = ChatDeepSeek(
 
 
 ## 📜 开源协议
-[GNU GPL-3.0](LICENSE) © 2025 [YachenYanyi](https://github.com/yachenyanyi)
+[GNU GPL-3.0](LICENSE) © 2025 [yachenyanyi](https://github.com/yachenyanyi)
 
 
 
